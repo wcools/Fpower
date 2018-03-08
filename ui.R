@@ -38,7 +38,7 @@ shinyUI(fluidPage(
 			),
 			column(4,
 				wellPanel(
-					textOutput('txt.out')
+					htmlOutput('txt.out')
 				),
 				plotOutput("plot2")
 			),

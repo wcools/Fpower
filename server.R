@@ -32,32 +32,58 @@ shinyServer(function(input,output,session){
 		sldSDg2 <- as.numeric(as.character(input$sldSDg2))
 		sldSDg3 <- as.numeric(as.character(input$sldSDg3))
 
-		list(sldNtotal=sldNtotal,sldEff=sldEff,dbAlpha=dbAlpha,dbBeta=dbBeta,sldBvar,sldWvar,
-		sldNg1=sldNg1,sldNg2=sldNg2,sldNg3=sldNg3,sldAVg1=sldAVg1,sldAVg2=sldAVg2,sldAVg3=sldAVg3,sldSDg1=sldSDg1,sldSDg2=sldSDg2,sldSDg3=sldSDg3)
+		nrPrds <- 3
+		dfNum <- nrPrds - 1
+		dfDen <- sldNtotal - dfNum - 1
+		
+		list(dbFree=dbFree,sldNtotal=sldNtotal,sldEff=sldEff,dbAlpha=dbAlpha,dbBeta=dbBeta,sldBvar,sldWvar,
+		sldNg1=sldNg1,sldNg2=sldNg2,sldNg3=sldNg3,sldAVg1=sldAVg1,sldAVg2=sldAVg2,sldAVg3=sldAVg3,sldSDg1=sldSDg1,sldSDg2=sldSDg2,sldSDg3=sldSDg3,
+		nrPrds=nrPrds,dfNum=dfNum,dfDen=dfDen)
 	})
-
+	# output ncp critical F ----------------------------------------------------
+	output$txt.out <- renderText({
+		inx <- adjustInput()
+		out <- ""
+		if(inx$dbFree=="ss") out <- paste0(out,"sample size:",inx$sldNtotal,"<br>")
+		out <- paste0(out,"noncentrality parameter",inx$dbFree,"<br>")
+		out
+	})
 	# free parameter
 	output$dd.free <- renderUI({
-		selectInput("dbFree", "free parameter:", c("sample size","effect size","type I error","type II error"),selected="sample size")
+		selectInput("dbFree", "free parameter:", c("select one"="NA","sample size"="ss","effect size"="es","type I error"="a","type II error"="b"),selected="select one")
 	})
 	# total sample size
 	output$sld.ntotal <- renderUI({
 		inx <- adjustInput()
-		xNtotal <- ifelse(inx$sldNtotal<0,128,inx$sldNtotal)
-		sliderInput("sldNtotal", "sample size:", min = -1, max = 256, value = xNtotal)
+		sliderInput("sldNtotal", "sample size:", min = -1, max = 256, value = 32)
+		if(inx$dbFree!="ss"){
+			xNtotal <- ifelse(inx$sldNtotal<0,128,inx$sldNtotal)
+			sliderInput("sldNtotal", "sample size:", min = -1, max = 256, value = xNtotal)
+		}
 	})
 	# effect size f
 	output$sld.eff <- renderUI({
 		inx <- adjustInput()
 		sliderInput("sldEff", "effect size:", min = 0, max = 16, value = .25,step=.001)
+		if(inx$dbFree!="es"){
+			sliderInput("sldEff", "effect size:", min = 0, max = 16, value = .25,step=.001)
+		}
 	})
 	# type I error, alpha
 	output$db.alpha <- renderUI({
+		inx <- adjustInput()
 		selectInput("dbAlpha", "type I error:", c(".001" = ".001",".01" = ".01",".05" = ".05",".1" = ".1"))
+		if(inx$dbFree!="a"){
+			selectInput("dbAlpha", "type I error:", c(".001" = ".001",".01" = ".01",".05" = ".05",".1" = ".1"))
+		}
 	})
 	# type II error, beta
 	output$db.beta <- renderUI({
+		inx <- adjustInput()
 		selectInput("dbBeta", "type II error:", c(".2" = ".2",".15" = ".15",".1" = ".1",".05" = ".05"))
+		if(inx$dbFree!="b"){
+			selectInput("dbBeta", "type II error:", c(".2" = ".2",".15" = ".15",".1" = ".1",".05" = ".05"))
+		}
 	})
 	# effect size variance, between
 	output$sld.bvar <- renderUI({
@@ -68,11 +94,6 @@ shinyServer(function(input,output,session){
 	output$sld.wvar <- renderUI({
 		inx <- adjustInput()
 		sliderInput("sldWvar", "within variance:", min = 0, max = 32, value = 6)
-	})
-	# output ncp critical F
-	output$txt.out <- renderText({
-		inx <- adjustInput()
-		paste0("noncentrality parameter",inx$sldNtotal)
 	})
 	# sample size groups
 	output$sld.ngs <- renderUI({
