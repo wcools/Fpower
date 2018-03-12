@@ -32,15 +32,16 @@ shinyUI(fluidPage(
 				wellPanel(
 					uiOutput("sld.ntotal"),
 					uiOutput("sld.eff"),
-					uiOutput("db.alpha"),
-					uiOutput("db.beta")
+					uiOutput("sld.beta"),
+					# uiOutput("db.alpha"),
+					selectInput("dbAlpha", "type I error:", c(".001" = ".001",".01" = ".01",".05" = ".05",".1" = ".1"),selected=".01")
 				)
 			),
 			column(4,
 				wellPanel(
 					htmlOutput('txt.out')
 				),
-				plotOutput("plot2")
+				plotOutput("plotHoHa")
 			),
 			column(4,
 				wellPanel(
