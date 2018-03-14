@@ -19,22 +19,20 @@ shinyUI(fluidPage(
 
 	titlePanel("Exploring power for one-way ANOVA with F-distribution"),
 		fluidRow(
-			column(2,
+			column(4,
 				wellPanel(
-					uiOutput("dd.free")
-				),
-				wellPanel(
-					uiOutput("sld.bvar"),
-					uiOutput("sld.wvar")
-				)
-			),
-			column(2,
-				wellPanel(
+					# selectInput("dbFree", "free parameter:", c("select one"="NA","sample size"="ss","effect size"="es","type II error"="b"),selected="select one"),
+					# uiOutput("dd.free"),
+					selectInput("dbFree", "free parameter:", c("select one"="NA","sample size"="ss","effect size"="es","type II error"="b"),selected="select one"),
 					uiOutput("sld.ntotal"),
 					uiOutput("sld.eff"),
 					uiOutput("sld.beta"),
-					# uiOutput("db.alpha"),
-					selectInput("dbAlpha", "type I error:", c(".001" = ".001",".01" = ".01",".05" = ".05",".1" = ".1"),selected=".01")
+					selectInput("dbAlpha", "type I error:", c(".001" = ".001",".01" = ".01",".05" = ".05",".1" = ".1"),selected=".01"),
+					numericInput("dbPred", "number of categories:", 2, min = 2, max = 8)
+					# selectInput("dbPred", "number of categories:", as.character(2:8),selected=2)
+					# ,
+					# uiOutput("sld.bvar"),
+					# uiOutput("sld.wvar")
 				)
 			),
 			column(4,
@@ -47,31 +45,10 @@ shinyUI(fluidPage(
 				wellPanel(
 					textOutput('')
 				),
-				plotOutput("plot1")
-			)
-		),
-		fluidRow(
-			column(2,
-					h4("sample sizes"),
-					uiOutput("sld.ng1"),
-					uiOutput("sld.ng2"),
-					uiOutput("sld.ng3"),
-					uiOutput("sld.ngs")
-			),
-			column(2,
-					h4("averages"),
-					uiOutput("sld.avg1"),
-					uiOutput("sld.avg2"),
-					uiOutput("sld.avg3")
-			),
-			column(2,
-					h4("standard deviations"),
-					uiOutput("sld.sdg1"),
-					uiOutput("sld.sdg2"),
-					uiOutput("sld.sdg3")
-			),
-			column(6,
-				plotOutput("distPlot")
+				plotOutput("plot1"),
+				plotOutput("plotGetHoF"),
+				plotOutput("plotHoHaF"),
+				plotOutput("plotPowerCurve")
 			)
 		)
 	)
