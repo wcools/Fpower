@@ -37,15 +37,15 @@ shinyUI(fluidPage(
 			),
 			column(4,
 				wellPanel(
-					htmlOutput('txt.out')
+					htmlOutput('txt.out.1')
 				),
 				plotOutput("plotHoHa")
 			),
 			column(4,
 				wellPanel(
-					textOutput('')
+					htmlOutput('txt.out.2')
 				),
-				plotOutput("plot1"),
+				plotOutput("plotHo"),
 				plotOutput("plotGetHoF"),
 				plotOutput("plotHoHaF"),
 				plotOutput("plotPowerCurve")
