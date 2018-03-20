@@ -21,34 +21,30 @@ shinyUI(fluidPage(
 		fluidRow(
 			column(4,
 				wellPanel(
-					# selectInput("dbFree", "free parameter:", c("select one"="NA","sample size"="ss","effect size"="es","type II error"="b"),selected="select one"),
-					# uiOutput("dd.free"),
 					selectInput("dbFree", "free parameter:", c("select one"="NA","sample size"="ss","effect size"="es","type II error"="b"),selected="select one"),
 					uiOutput("sld.ntotal"),
 					uiOutput("sld.eff"),
 					uiOutput("sld.beta"),
 					selectInput("dbAlpha", "type I error:", c(".001" = ".001",".01" = ".01",".05" = ".05",".1" = ".1"),selected=".01"),
 					numericInput("dbPred", "number of categories:", 2, min = 2, max = 8)
-					# selectInput("dbPred", "number of categories:", as.character(2:8),selected=2)
-					# ,
-					# uiOutput("sld.bvar"),
-					# uiOutput("sld.wvar")
 				)
 			),
 			column(4,
 				wellPanel(
 					htmlOutput('txt.out.1')
 				),
-				plotOutput("plotHoHa")
+				plotOutput("plotHoHa2")
 			),
 			column(4,
 				wellPanel(
 					htmlOutput('txt.out.2')
 				),
-				plotOutput("plotHo"),
-				plotOutput("plotGetHoF"),
+				uiOutput("checkPlotPowercurve"),
+				uiOutput("checkPlotHoF"),
+				uiOutput("checkPlotHoHaF"),
+				plotOutput("plotPowerCurve"),
 				plotOutput("plotHoHaF"),
-				plotOutput("plotPowerCurve")
+				plotOutput("plotHoF")
 			)
 		)
 	)

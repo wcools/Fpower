@@ -12,46 +12,26 @@ library(pwr)
 
 # server file
 shinyServer(function(input,output,session){
-
-	# calculate effect sizes per time point
-	adjustInput <- reactive({
-		dbFree <- input$dbFree
-		sldNtotal <- as.numeric(as.character(input$sldNtotal))
-		sldEff <- as.numeric(as.character(input$sldEff))
-		# dbAlpha <- as.numeric(as.character(input$dbAlpha))
-		# sldBeta <- as.numeric(as.character(input$sldBeta))
-		# sldBvar <-  as.numeric(as.character(input$sldBvar))
-		# sldWvar <-  as.numeric(as.character(input$sldWvar))
-		sldNg1 <- as.numeric(as.character(input$sldNg1))
-		sldNg2 <- as.numeric(as.character(input$sldNg2))
-		sldNg3 <- as.numeric(as.character(input$sldNg3))
-		sldAVg1 <- as.numeric(as.character(input$sldAVg1))
-		sldAVg2 <- as.numeric(as.character(input$sldAVg2))
-		sldAVg3 <- as.numeric(as.character(input$sldAVg3))
-		sldSDg1 <- as.numeric(as.character(input$sldSDg1))
-		sldSDg2 <- as.numeric(as.character(input$sldSDg2))
-		sldSDg3 <- as.numeric(as.character(input$sldSDg3))
-
-		# outEta2 <- sldBvar / (sldBvar+sldWvar)
-		# sldEff <- sqrt(outEta2/(1-outEta2))
-		nrPrds <- 3
-		dfNum <- nrPrds - 1
-		dfDen <- sldNtotal - dfNum - 1
-		outCritF <- df(sldEff,dfNum,dfDen)
-		outNcp <- sldEff^2 * sldNtotal
-		# dbAlpha=dbAlpha,sldBeta=sldBeta,
-		list(dbFree=dbFree,sldNtotal=sldNtotal,sldEff=sldEff,sldBvar=sldBvar,sldWvar=sldWvar,
-		sldNg1=sldNg1,sldNg2=sldNg2,sldNg3=sldNg3,sldAVg1=sldAVg1,sldAVg2=sldAVg2,sldAVg3=sldAVg3,sldSDg1=sldSDg1,sldSDg2=sldSDg2,sldSDg3=sldSDg3,
-		nrPrds=nrPrds,dfNum=dfNum,dfDen=dfDen,outNcp=outNcp,outEta2=outEta2)
-	})
-
 	
 	# calculate effect sizes per time point
 	processChange <- reactive({
 		# post hoc
-		sldBeta <- as.numeric(as.character(input$sldBeta))
-		sldNtotal <- as.numeric(as.character(input$sldNtotal))
-		sldEff <- as.numeric(as.character(input$sldEff))
+		sldBeta <- as.numeric(as.character(isolate(input$sldBeta)))
+		sldNtotal <- as.numeric(as.character(isolate(input$sldNtotal)))
+		sldEff <- as.numeric(as.character(isolate(input$sldEff)))
+		# what is happening here ???
+		if(length(input$sldBeta) == 1){
+			sldNtotal <- as.numeric(as.character(input$sldNtotal))
+			sldEff <- as.numeric(as.character(input$sldEff))		
+		}
+		if(length(input$sldNtotal) == 1){
+			sldBeta <- as.numeric(as.character(input$sldBeta))
+			sldEff <- as.numeric(as.character(input$sldEff))		
+		}
+		if(length(input$sldEff) == 1){
+			sldBeta <- as.numeric(as.character(input$sldBeta))
+			sldNtotal <- as.numeric(as.character(input$sldNtotal))
+		}
 		dbAlpha <- as.numeric(as.character(input$dbAlpha))
 		dbPred <- as.numeric(as.character(input$dbPred))
 
@@ -78,10 +58,10 @@ shinyServer(function(input,output,session){
 	output$txt.out.1 <- renderText({
 		inx <- processChange()
 		out <- ""
-		out <- paste0(out,"<strong>power</strong> <b>",1-inx$sldBeta,"</b> or type II error (beta): ",inx$sldBeta,"<br>")
-		out <- paste0(out,"total <strong>sample size</strong> (n): ",inx$sldNtotal,"<br>")
-		out <- paste0(out,"<strong>effect size</strong> (f): ",inx$sldEff,"<br>")
-		out <- paste0(out,"type I error (alpha): ",inx$dbAlpha,"<br>")
+		out <- paste0(out,"<strong>power</strong> <b>",1-round(inx$sldBeta,4),"</b> or type II error (beta): ",round(inx$sldBeta,2),"<br>")
+		out <- paste0(out,"total <strong>sample size</strong> (n): ",round(inx$sldNtotal),"<br>")
+		out <- paste0(out,"<strong>effect size</strong> (f): ",round(inx$sldEff,2),"<br>")
+		out <- paste0(out,"type I error (alpha): ",round(inx$dbAlpha,4),"<br>")
 		out
 	})
 	# output ncp critical F ----------------------------------------------------
@@ -91,13 +71,9 @@ shinyServer(function(input,output,session){
 		out <- paste0(out,"number of predictors ",inx$dbPred,"<br>")
 		out <- paste0(out,"<u>critical F value</u> with df ",inx$dfNum," and ",inx$dfDen,": ",round(inx$outCritF,4),"<br>")
 		out <- paste0(out,"<u>non-centrality parameter</u> (ncp): ",round(inx$outNcp,2),"<br>")
-		out <- paste0(out,"ratio between / within variance ",round(inx$sldEff^2,3),"<br>")
+		out <- paste0(out,"ratio between / within variance ",round(inx$sldEff^2,4),"<br>")
 		out
 	})
-	# free parameter
-	# output$dd.free <- renderUI({
-		# selectInput("dbFree", "free parameter:", c("select one"="NA","sample size"="ss","effect size"="es","type II error"="b"),selected="select one")
-	# })
 	# total sample size
 	output$sld.ntotal <- renderUI({
 		inx <- processChange()
@@ -112,11 +88,6 @@ shinyServer(function(input,output,session){
 		if(length(inx$sldEff)==0) sldEff <- 0.01
 		sliderInput("sldEff", "effect size:", min = 0.01, max = 2, value = sldEff, step=.001)
 	})
-	# type I error, alpha
-	# output$db.alpha <- renderUI({
-		# dbAlpha <- as.numeric(as.character(isolate(input$dbAlpha)))
-		# updateSelectInput("dbAlpha", "type I error:", c(".001" = ".001",".01" = ".01",".05" = ".05",".1" = ".1"),selected=inx$dbAlpha)
-	# })
 	# type II error, beta
 	output$sld.beta <- renderUI({
 		inx <- processChange()
@@ -124,43 +95,40 @@ shinyServer(function(input,output,session){
 		if(length(inx$sldBeta)==0) sldBeta <- 0
 		sliderInput("sldBeta", paste0("type II error (power~",round(1-sldBeta,2),")"), min = 0, max = 1, value = sldBeta,step=.001)
 	})
-	# effect size variance, between
-	# output$sld.bvar <- renderUI({
-		# inx <- processChange()
-		# sldBvar <- inx$sldEff^2# as.numeric(as.character(isolate(input$sldBvar)))
-		# sliderInput("sldBvar", "between/within variance:", min = -1, max = 32, value = sldBvar)
-	# })
-	# effect size variance, within
-	# output$sld.wvar <- renderUI({
-		# inx <- processChange()
-		# sldWvar <- inx$sldEff^2 #as.numeric(as.character(isolate(input$sldWvar)))
-		# sliderInput("sldWvar", "within variance:", min = 0, max = 32, value = 6)
-	# })
-
-
-
 	
-	# ----------------------------------- #
+	# ----- #
+	
+	# permanent plot, two rows of F distributions Ho and Ha 
+	output$plotHoHa2 <- renderPlot({
+		plotOutput(getHoHa2(), height = 100, width = 450)
+	})
+	
+	# remaining plots (possibly remove some of them, extend others)
+	
 
-	output$plot2 <- renderPlot({
-		plotOutput(getPowerCurve(), height = 100, width = 450)
-	}) 
-	output$plotHoHa <- renderPlot({
-		plotOutput(plotHaHo(), height = 300, width = 450)
-	}) 
-	output$plotHo <- renderPlot({
-		plotOutput(plotHo(), height = 300, width = 450)
-	}) 
-	output$plotGetHoF <- renderPlot({
-		plotOutput(getHoF(), height = 300, width = 450)
-	}) 
-	output$plotHoHaF <- renderPlot({
-		plotOutput(getHoHaF(), height = 300, width = 450)
-	}) 
+	# power curve
+	output$checkPlotPowercurve <- renderUI({
+		checkboxInput("showPowerCurve","Power Curve", FALSE)
+	})
 	output$plotPowerCurve <- renderPlot({
-		plotOutput(getPowerCurve(), height = 300, width = 450)
-	}) 
-
+		if(input$showPowerCurve) plotOutput(getPowerCurve(), height = 100, width = 450)
+	})
+	
+	# null distribution with rejection area
+	output$checkPlotHoF <- renderUI({
+		checkboxInput("showPlotHoF","F Ho + rejection area", FALSE)
+	})
+	output$plotHoF <- renderPlot({
+		if(input$showPlotHoF) plotOutput(getHoF(), height = 100, width = 450)
+	})	
+	
+	# null and alternative distribution
+	output$checkPlotHoHaF <- renderUI({
+		checkboxInput("showPlotHoHaF","F Ho + Ha", FALSE)
+	})
+	output$plotHoHaF <- renderPlot({
+		if(input$showPlotHoHaF) plotOutput(getHoHaF(), height = 100, width = 450)
+	})
 
 	# ----------------------------------- #
 	
@@ -172,7 +140,8 @@ shinyServer(function(input,output,session){
 		return(fpi)
 	}
 
-	plotHaHo <- function(){
+	# F-null and alternative distributions on top of each other with rejection areas
+	getHoHa2 <- function(){
 		inx <- processChange()
 		# F-null and alternative distributions - rows
 		xmax=15 
@@ -208,7 +177,7 @@ shinyServer(function(input,output,session){
 	# list(sldBeta=sldBeta,sldEff=sldEff,sldNtotal=sldNtotal,dbAlpha=dbAlpha,outCritF=outCritF,outNcp=outNcp,dfNum=dfNum,dfDen=dfDen,dbPred=dbPred)
 
 
-	plotHo <- function(){
+	getHoF <- function(){
 		inx <- processChange()
 		# F-null distribution with area of rejection
 		xx=seq(0,6,.001)
@@ -226,33 +195,7 @@ shinyServer(function(input,output,session){
 		polygon(x=c(inx$outCritF,xxsub,rev(xxsub),inx$outCritF),y=c(df(inx$outCritF,inx$dfNum,inx$dfDen),fxxsub,0*fxxsub,0),col="red")
 		segments(inx$outCritF,0,inx$outCritF,.15)
 	}	
-	
-	getHoF <- function(){
-		# inx <- adjustInput()
-		inx <- processChange()
-		n.sl=inx$sldNtotal
-		cf.sl=qf(1-inx$dbAlpha,inx$dfNum,inx$dfDen)
-		eta2.ex=inx$sldEff
-		f.ex=sqrt(eta2.ex/(1-eta2.ex))
-		lambda.ex=f.ex^2*n.sl
 
-		xx=seq(0,6,.001)
-		fxx=df(xx,inx$dfNum,inx$dfDen)
-		plot(xx,fxx,type="n",xlab=expression(paste(italic(F)," value")),ylab="Density",xlim=c(0,5.5),ylim=c(0,1),xaxt="n",yaxt="n",axes=FALSE)
-		axis(side=1,pos=0,at=c(0,1,2,4,5))
-		axis(side=2,pos=0)
-		lines(xx,fxx,lwd=2)
-		lines(c(inx$outCritF,inx$outCritF),c(-.05,.0),col="red",lwd=2)
-		mtext(expression(italic(F)[list(inx$dfNum,inx$dfNum)]^{0.95}==3.09),side=1,adj=.6,padj=.5,col="red")
-		#text(4.5,.1,"Pr(reject H0|H0)=0.05")
-		text((inx$outCritF+1),.2,"reject H0",col="red") 
-		text(1.3,.2,"do not reject H0")
-		xxsub=xx[xx>inx$outCritF]
-		fxxsub=fxx[xx>inx$outCritF]  
-		polygon(x=c(inx$outCritF,xxsub,rev(xxsub),cf.sl),y=c(df(inx$outCritF,inx$dfNum,inx$dfDen),fxxsub,0*fxxsub,0),col="red")
-		# polygon(x=c(inx$crf,xxsub,rev(xxsub),inx$sst),y=c(df(inx$crf,inx$dfn,inx$dfd),fxxsub,0*fxxsub,0),col="red")
-		segments(inx$outCritF,0,inx$outCritF,.15)
-	}
 	getHoHaF <- function(){
 		# inx <- adjustInput()
 		inx <- processChange()
@@ -283,43 +226,6 @@ shinyServer(function(input,output,session){
 		axis(1,pos=0,cex.lab=cexlab,cex.axis=cexaxis) 
 		axis(2,pos=0,at=c(0,inx$dbAlpha,.2,.4,.6,.8,1),labels=c(0,inx$sldBeta,.2,.4,.6,.8,1),cex.lab=cexlab,cex.axis=cexaxis) 
 		abline(h=0.05,col="gray80",lwd=2) 
-	}
-
-	# F-null and alternative distributions on top of each other with rejection areas
-	createHoHa <- function(){
-		inx <- processChange()
-		xmax=15 
-		xx=seq(0,xmax,.001)
-		dfNum <- inx$dfNum
-		dfDen <- inx$dfDen
-		outNcp <- inx$outNcp
-		fxx=df(xx,dfNum,dfDen) 
-		mnx=max(fxx)+.2
-		par(mar=c(2.5,0,0,0))
-		plot(xx,fxx,type="n",xlab="",ylab="",xlim=c(0,xmax),ylim=c(0,2*mnx),xaxt="n",yaxt="n",axes=FALSE)
-		lines(xx,fxx,lwd=2) 
-		cc=qf(1-inx$dbAlpha,dfNum,dfDen) 
-		text((cc+1.5),.2,"reject H0",col="red")  
-		text(1.3,.2,"do not reject H0") 
-		xxsub=xx[xx>cc] 
-		fxxsub=fxx[xx>cc]   
-		polygon(x=c(cc,xxsub,rev(xxsub),cc),y=c(df(cc,dfNum,dfDen),fxxsub,0*fxxsub,0),col="red") 
-		segments(cc,0,cc,.15) 
-		segments(0,0,0,1.1) 
-		segments(0,0,xmax,0)
-		fxx2=df(xx,dfNum,dfDen,ncp=outNcp) 
-		lines(xx,fxx2+mnx,lwd=2) 
-		segments(0,mnx,0,mnx+1.1) 
-		segments(0,mnx,xmax,mnx) 
-		segments(cc,0,cc,1.5*mnx) 
-		xs=xx[xx>cc] 
-		ys=fxx2[xx>cc] 
-		polygon(x=c(xs,cc),y=c(ys,0)+mnx,col="red") 
-		text(cc,.6+mnx,"true state of nature",cex=1.5,pos=4) 
-		text(cc,.6,"decision",cex=1.5,pos=4)
-		text(cc-2.9,.3+mnx,substitute(italic(F)[list(.num,.den,.ncp)],list(.num=dfNum,.den=dfDen,.ncp=outNcp)),cex=1.3,pos=4) 
-		# text(cc-2.9,.8,expression(italic(F)[list(dfNum,dfDen)]),cex=1.3,pos=4) 
-		text(cc-2.9,.8,substitute(italic(F)[list(.num,.den)],list(.num=dfNum,.den=dfDen)),cex=1.3,pos=4) 
 	}
 
 })
