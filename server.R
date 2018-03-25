@@ -16,40 +16,29 @@ shinyServer(function(input,output,session){
 	# calculate effect sizes per time point
 	processChange <- reactive({
 		# post hoc
-		sldBeta <- as.numeric(as.character(isolate(input$sldBeta)))
-		sldNtotal <- as.numeric(as.character(isolate(input$sldNtotal)))
-		sldEff <- as.numeric(as.character(isolate(input$sldEff)))
-		# what is happening here ???
-		if(length(input$sldBeta) == 1){
-			sldNtotal <- as.numeric(as.character(input$sldNtotal))
-			sldEff <- as.numeric(as.character(input$sldEff))		
-		}
-		if(length(input$sldNtotal) == 1){
-			sldBeta <- as.numeric(as.character(input$sldBeta))
-			sldEff <- as.numeric(as.character(input$sldEff))		
-		}
-		if(length(input$sldEff) == 1){
-			sldBeta <- as.numeric(as.character(input$sldBeta))
-			sldNtotal <- as.numeric(as.character(input$sldNtotal))
-		}
+		
+		sldBeta <- as.numeric(as.character((input$sldBeta)))
+		sldNtotal <- as.numeric(as.character((input$sldNtotal)))
+		sldEff <- as.numeric(as.character((input$sldEff)))
 		dbAlpha <- as.numeric(as.character(input$dbAlpha))
 		dbPred <- as.numeric(as.character(input$dbPred))
-
+		
 		if(input$dbFree=="b"){
-			sldBeta <- 1-pwr.anova.test(k = 3, n = sldNtotal, f = sldEff, sig.level = dbAlpha, power = )$power
+			sldBeta <- 1-pwr.anova.test(k = dbPred, n = round(sldNtotal/dbPred), f = sldEff, sig.level = dbAlpha, power = )$power
 		}
 		# apriori
 		if(input$dbFree=="es"){
-			sldEff <- pwr.anova.test(k = 3, n = sldNtotal, f = , sig.level = dbAlpha, power = 1-sldBeta)$f
+			sldEff <- pwr.anova.test(k = dbPred, n = round(sldNtotal/dbPred), f = , sig.level = dbAlpha, power = 1-sldBeta)$f
 		}
 		# sensitivity
 		if(input$dbFree=="ss"){
-			sldNtotal <- pwr.anova.test(k = 3, n = , f = sldEff, sig.level = dbAlpha, power = 1-sldBeta)$n		
+			sldNtotal <- dbPred*pwr.anova.test(k = dbPred, n = , f = sldEff, sig.level = dbAlpha, power = 1-sldBeta)$n		
 		}
 		dfNum <- dbPred - 1
 		dfDen <- sldNtotal - dfNum - 1
 		outCritF <- qf(1-dbAlpha,dfNum,dfDen)
 		outNcp <- sldEff^2 * sldNtotal
+
 		list(sldBeta=sldBeta,sldEff=sldEff,sldNtotal=sldNtotal,dbAlpha=dbAlpha,outCritF=outCritF,outNcp=outNcp,dfNum=dfNum,dfDen=dfDen,dbPred=dbPred)
 	})
 
@@ -77,22 +66,25 @@ shinyServer(function(input,output,session){
 	# total sample size
 	output$sld.ntotal <- renderUI({
 		inx <- processChange()
-		sldNtotal <- isolate(inx$sldNtotal) #as.numeric(as.character(isolate(input$sldNtotal)))
-		if(length(inx$sldNtotal)==0) sldNtotal <- 3
+		sldNtotal <- isolate(inx$sldNtotal) 
+		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldNtotal <- 190
+		# if(length(inx$sldNtotal)==0) sldNtotal <- 3
 		sliderInput("sldNtotal", "sample size:", min = 3, max = 256, value = sldNtotal)
 	})
 	# effect size f
 	output$sld.eff <- renderUI({
 		inx <- processChange()
-		sldEff <- isolate(inx$sldEff) #as.numeric(as.character(isolate(input$sldEff)))
-		if(length(inx$sldEff)==0) sldEff <- 0.01
+		sldEff <- isolate(inx$sldEff) 
+		# if(length(inx$sldEff)==0) sldEff <- 0.01
+		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldEff <- .25
 		sliderInput("sldEff", "effect size:", min = 0.01, max = 2, value = sldEff, step=.001)
 	})
 	# type II error, beta
 	output$sld.beta <- renderUI({
 		inx <- processChange()
-		sldBeta <- inx$sldBeta #as.numeric(as.character(inx$sldBeta))
-		if(length(inx$sldBeta)==0) sldBeta <- 0
+		sldBeta <- isolate(inx$sldBeta)
+		# if(length(inx$sldBeta)==0) sldBeta <- 0
+		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldBeta <- .2
 		sliderInput("sldBeta", paste0("type II error (power~",round(1-sldBeta,2),")"), min = 0, max = 1, value = sldBeta,step=.001)
 	})
 	
@@ -111,7 +103,8 @@ shinyServer(function(input,output,session){
 		checkboxInput("showPowerCurve","Power Curve", FALSE)
 	})
 	output$plotPowerCurve <- renderPlot({
-		if(input$showPowerCurve) plotOutput(getPowerCurve(), height = 100, width = 450)
+		# if(input$showPowerCurve) plotOutput(getPowerCurve(), height = 100, width = 450)
+		plotOutput(getPowerCurve(), height = 100, width = 450)
 	})
 	
 	# null distribution with rejection area
@@ -119,7 +112,8 @@ shinyServer(function(input,output,session){
 		checkboxInput("showPlotHoF","F Ho + rejection area", FALSE)
 	})
 	output$plotHoF <- renderPlot({
-		if(input$showPlotHoF) plotOutput(getHoF(), height = 100, width = 450)
+		# if(input$showPlotHoF) 
+		plotOutput(getHoF(), height = 100, width = 450)
 	})	
 	
 	# null and alternative distribution
@@ -127,7 +121,8 @@ shinyServer(function(input,output,session){
 		checkboxInput("showPlotHoHaF","F Ho + Ha", FALSE)
 	})
 	output$plotHoHaF <- renderPlot({
-		if(input$showPlotHoHaF) plotOutput(getHoHaF(), height = 100, width = 450)
+		# if(input$showPlotHoHaF) 
+		plotOutput(getHoHaF(), height = 100, width = 450)
 	})
 
 	# ----------------------------------- #
@@ -138,6 +133,12 @@ shinyServer(function(input,output,session){
 		lambda=eta2/(1-eta2)*n
 		fpi = 1-pf(f.crit,a-1,n-a,lambda)
 		return(fpi)
+	}
+	f2eta2 <- function(f){
+		f^2/(1+f^2)
+	}
+	eta2f <- function(eta2){
+		sqrt(eta2/(1-eta2))
 	}
 
 	# F-null and alternative distributions on top of each other with rejection areas
@@ -176,25 +177,53 @@ shinyServer(function(input,output,session){
 	
 	# list(sldBeta=sldBeta,sldEff=sldEff,sldNtotal=sldNtotal,dbAlpha=dbAlpha,outCritF=outCritF,outNcp=outNcp,dfNum=dfNum,dfDen=dfDen,dbPred=dbPred)
 
-
+	# depends on df num/den, alpha and critical F
 	getHoF <- function(){
 		inx <- processChange()
+		dfNum <- inx$dfNum
+		dfDen <- inx$dfDen
+		outCritF <- inx$outCritF
+		dbAlpha <- inx$dbAlpha
 		# F-null distribution with area of rejection
-		xx=seq(0,6,.001)
-		fxx=df(xx,inx$dfNum,inx$dfDen)
-		plot(xx,fxx,type="n",xlab=expression(paste(italic(F)," value")),ylab="Density",xlim=c(0,5.5),ylim=c(0,1),xaxt="n",yaxt="n",axes=FALSE)
+		fVal=seq(0,6,.001)
+		fDens=df(fVal,dfNum,dfDen)
+		plot(fVal,fDens,type="n",xlab=expression(paste(italic(F)," value")),ylab="Density",xlim=c(0,5.5),ylim=c(0,1),xaxt="n",yaxt="n",axes=FALSE)
 		axis(side=1,pos=0,at=c(0,1,2,4,5))
 		axis(side=2,pos=0)
-		lines(xx,fxx,lwd=2)
-		lines(c(inx$outCritF,inx$outCritF),c(-.05,.0),col="red",lwd=2)
-		mtext(substitute(italic(F)[list(dfn,dfd)]^{cfd}==es,list(dfn=inx$dfNum,dfd=inx$dfDen,cfd=1-inx$dbAlpha,es=round(inx$outCritF,2))),side=1,adj=.6,padj=.5,col="red")
-		text((inx$outCritF+1),.2,"reject H0",col="red") 
+		lines(fVal,fDens,lwd=2)
+		lines(c(outCritF,outCritF),c(-.05,.0),col="red",lwd=2)
+		mtext(substitute(italic(F)[list(dfn,dfd)]^{cfd}==es,list(dfn=dfNum,dfd=dfDen,cfd=1-dbAlpha,es=round(outCritF,2))),side=1,adj=.6,padj=.5,col="red")
+		text((outCritF+1),.2,"reject H0",col="red") 
 		text(1.3,.2,"do not reject H0")
-		xxsub=xx[xx>inx$outCritF]
-		fxxsub=fxx[xx>inx$outCritF]  
-		polygon(x=c(inx$outCritF,xxsub,rev(xxsub),inx$outCritF),y=c(df(inx$outCritF,inx$dfNum,inx$dfDen),fxxsub,0*fxxsub,0),col="red")
-		segments(inx$outCritF,0,inx$outCritF,.15)
+		fValReject=fVal[fVal>outCritF]
+		fDensReject=fDens[fVal>outCritF]  
+		polygon(x=c(outCritF,fValReject,rev(fValReject),outCritF),y=c(df(outCritF,dfNum,dfDen),fDensReject,0*fDensReject,0),col="red")
+		segments(outCritF,0,outCritF,.15)
 	}	
+	getPowerCurve <- function(){
+		# f = sqrt(eta2/(1-eta2))
+		inx <- processChange()
+		sldNtotal <- inx$sldNtotal
+		dbAlpha <- inx$dbAlpha
+		dbPred <- inx$dbPred
+		sldBeta <- inx$sldBeta
+		sldEff <- inx$sldEff
+		outEta2 <- sldEff^2/(1+sldEff^2)
+
+		# eta - probability curve
+		cexlab=1.25 
+		cexaxis=1.25 
+		par(mgp=c(2.3,1,0)) 
+		eta2seq=seq(0,.3,.001) 
+		alpha=.05 
+		pp=fpi(eta2=eta2seq,n=sldNtotal,alpha=dbAlpha,a=dbPred) 
+		plot(eta2seq,pp,type="l",xlab=expression(eta^2),ylab=expression(pi),ylim=c(0,1),yaxt="n",axes=FALSE, cex.lab=cexlab,cex.axis=cexaxis,lwd=3) 
+		pp0=fpi(eta2=outEta2,n=sldNtotal,alpha=dbAlpha,a=dbPred) 
+		points(outEta2,pp0,cex=2,pch=18)
+		axis(1,pos=0,cex.lab=cexlab,cex.axis=cexaxis) 
+		axis(2,pos=0,at=c(0,dbAlpha,.2,.4,.6,.8,1),labels=c(0,sldBeta,.2,.4,.6,.8,1),cex.lab=cexlab,cex.axis=cexaxis) 
+		abline(h=0.05,col="gray80",lwd=2) 
+	}
 
 	getHoHaF <- function(){
 		# inx <- adjustInput()
@@ -212,20 +241,6 @@ shinyServer(function(input,output,session){
 			fxx=df(xx,inx$dfNum,inx$dfDen,ncp=inx$outNcp)
 			lines(xx,fxx,lwd=2,col=rgb(10+j*40,10+j*40,10+j*40,255,maxColorValue=255))   
 		}
-	}
-	getPowerCurve <- function(){
-		# inx <- adjustInput()
-		inx <- processChange()
-		cexlab=1.25 
-		cexaxis=1.25 
-		par(mgp=c(2.3,1,0)) 
-		eta2seq=seq(0,.3,.001) 
-		alpha=.05 
-		pp=fpi(eta2=eta2seq,n=inx$sldNtotal,alpha=inx$dbAlpha,a=inx$dbPred) 
-		plot(eta2seq,pp,type="l",xlab=expression(eta^2),ylab=expression(pi),ylim=c(0,1),yaxt="n",axes=FALSE, cex.lab=cexlab,cex.axis=cexaxis,lwd=3) 
-		axis(1,pos=0,cex.lab=cexlab,cex.axis=cexaxis) 
-		axis(2,pos=0,at=c(0,inx$dbAlpha,.2,.4,.6,.8,1),labels=c(0,inx$sldBeta,.2,.4,.6,.8,1),cex.lab=cexlab,cex.axis=cexaxis) 
-		abline(h=0.05,col="gray80",lwd=2) 
 	}
 
 })

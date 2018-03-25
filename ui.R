@@ -39,12 +39,16 @@ shinyUI(fluidPage(
 				wellPanel(
 					htmlOutput('txt.out.2')
 				),
-				uiOutput("checkPlotPowercurve"),
-				uiOutput("checkPlotHoF"),
-				uiOutput("checkPlotHoHaF"),
-				plotOutput("plotPowerCurve"),
-				plotOutput("plotHoHaF"),
-				plotOutput("plotHoF")
+				selectInput("dbPlots", "select plot", c("Power Curve" = "1","Ho and Ha" = "2","Ho" = "3"),selected="1"),
+				conditionalPanel("condition=input.dbPlots == 1",plotOutput("plotPowerCurve")),
+				conditionalPanel("condition=input.dbPlots == 2",plotOutput("plotHoHaF")),
+				conditionalPanel("condition=input.dbPlots == 3",plotOutput("plotHoF"))#,
+				# uiOutput("checkPlotPowercurve"),
+				# uiOutput("checkPlotHoF"),
+				# uiOutput("checkPlotHoHaF"),
+				# plotOutput("plotPowerCurve"),
+				# plotOutput("plotHoHaF"),
+				# plotOutput("plotHoF")
 			)
 		)
 	)
