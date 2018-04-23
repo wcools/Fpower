@@ -1,8 +1,9 @@
 
 # install required packages not yet installed
-pckgs <- c('shiny','reshape2','ggplot2','plyr','arm')
+pckgs <- c('shiny','reshape2','ggplot2','plyr','arm','pwr')
 todo <- pckgs[!is.element(pckgs, names(installed.packages()[,"Package"]))]
 if(length(todo) > 0) install.packages(todo)  #,repos="http://cran.us.r-project.org")
+
 
 # load in the packages
 library(shiny)
@@ -54,44 +55,53 @@ shinyServer(function(input,output,session){
 		out
 	})
 	# output ncp critical F ----------------------------------------------------
+		# out <- paste0(out,"number of predictors ",inx$dbPred,"<br>")
 	output$txt.out.2 <- renderText({
 		inx <- processChange()
 		out <- ""
-		out <- paste0(out,"number of predictors ",inx$dbPred,"<br>")
-		out <- paste0(out,"<u>critical F value</u> with df ",inx$dfNum," and ",inx$dfDen,": ",round(inx$outCritF,4),"<br>")
+		out <- paste0(out,"<u>critical F value</u> with df ",round(inx$dfNum)," and ",round(inx$dfDen),": ",round(inx$outCritF,3),"<br>")
 		out <- paste0(out,"<u>non-centrality parameter</u> (ncp): ",round(inx$outNcp,2),"<br>")
-		out <- paste0(out,"ratio between / within variance ",round(inx$sldEff^2,4),"<br>")
+		out <- paste0(out,"ratio between / within variance ",round(inx$sldEff^2,3),"<br>")
 		out
 	})
 	# total sample size
 	output$sld.ntotal <- renderUI({
 		inx <- processChange()
+		txt <- "sample size:"
+		if(input$dbFree=="ss") txt <- "--conditional-- sample size"
 		sldNtotal <- isolate(inx$sldNtotal) 
 		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldNtotal <- 190
 		# if(length(inx$sldNtotal)==0) sldNtotal <- 3
-		sliderInput("sldNtotal", "sample size:", min = 3, max = 256, value = sldNtotal)
+		sliderInput("sldNtotal", txt, min = 3, max = 256, value = sldNtotal)
 	})
 	# effect size f
 	output$sld.eff <- renderUI({
 		inx <- processChange()
+		txt <- "effect size:"
+		if(input$dbFree=="es") txt <- "--conditional-- effect size"
 		sldEff <- isolate(inx$sldEff) 
 		# if(length(inx$sldEff)==0) sldEff <- 0.01
 		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldEff <- .25
-		sliderInput("sldEff", "effect size:", min = 0.01, max = 2, value = sldEff, step=.001)
+		sliderInput("sldEff", txt, min = 0.01, max = 2, value = sldEff, step=.001)
 	})
 	# type II error, beta
 	output$sld.beta <- renderUI({
 		inx <- processChange()
+		txt <- "type II error (power~"
+		if(input$dbFree=="b") txt <- "--conditional-- type II error (power~"
 		sldBeta <- isolate(inx$sldBeta)
 		# if(length(inx$sldBeta)==0) sldBeta <- 0
 		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldBeta <- .2
-		sliderInput("sldBeta", paste0("type II error (power~",round(1-sldBeta,2),")"), min = 0, max = 1, value = sldBeta,step=.001)
+		sliderInput("sldBeta", paste0(txt,round(1-sldBeta,2),")"), min = 0, max = 1, value = sldBeta,step=.001)
 	})
 	
 	# ----- #
 	
 	# permanent plot, two rows of F distributions Ho and Ha 
 	output$plotHoHa2 <- renderPlot({
+		validate(
+			need(input$dbFree!="NA", "")
+		)
 		plotOutput(getHoHa2(), height = 100, width = 450)
 	})
 	
@@ -104,6 +114,9 @@ shinyServer(function(input,output,session){
 	})
 	output$plotPowerCurve <- renderPlot({
 		# if(input$showPowerCurve) plotOutput(getPowerCurve(), height = 100, width = 450)
+		validate(
+			need(input$dbFree!="NA", "")
+		)
 		plotOutput(getPowerCurve(), height = 100, width = 450)
 	})
 	
@@ -113,15 +126,24 @@ shinyServer(function(input,output,session){
 	})
 	output$plotHoF <- renderPlot({
 		# if(input$showPlotHoF) 
+		validate(
+			need(input$dbFree!="NA", "")
+		)
 		plotOutput(getHoF(), height = 100, width = 450)
 	})	
 	
 	# null and alternative distribution
 	output$checkPlotHoHaF <- renderUI({
+		validate(
+			need(input$dbFree!="NA", "")
+		)
 		checkboxInput("showPlotHoHaF","F Ho + Ha", FALSE)
 	})
 	output$plotHoHaF <- renderPlot({
 		# if(input$showPlotHoHaF) 
+		validate(
+			need(input$dbFree!="NA", "")
+		)
 		plotOutput(getHoHaF(), height = 100, width = 450)
 	})
 
@@ -161,7 +183,7 @@ shinyServer(function(input,output,session){
 		segments(cc,0,cc,.15) 
 		segments(0,0,0,1.1) 
 		segments(0,0,xmax,0)
-		fxx2=df(xx,inx$dfNum,inx$dfDen,ncp=inx$outNcp) 
+		fxx2=df(xx,inx$dfNum,inx$dfDen,ncp=round(inx$outNcp,2)) 
 		lines(xx,fxx2+mnx,lwd=2) 
 		segments(0,mnx,0,mnx+1.1) 
 		segments(0,mnx,xmax,mnx) 
@@ -171,7 +193,7 @@ shinyServer(function(input,output,session){
 		polygon(x=c(xs,cc),y=c(ys,0)+mnx,col="red") 
 		text(cc,.6+mnx,"true state of nature",cex=1.5,pos=4) 
 		text(cc,.6,"decision",cex=1.5,pos=4)
-		text(cc-2.9,.3+mnx,substitute(italic(F)[list(dfn,dfd,ncp)],list(dfn=inx$dfNum,dfd=inx$dfDen,ncp=inx$outNcp)),cex=1.3,pos=4) 
+		text(cc-2.9,.3+mnx,substitute(italic(F)[list(dfn,dfd,ncp)],list(dfn=inx$dfNum,dfd=inx$dfDen,ncp=round(inx$outNcp,2))),cex=1.3,pos=4) 
 		text(cc-2.9,.8,substitute(italic(F)[list(dfn,dfd,ncp)],list(dfn=inx$dfNum,dfd=inx$dfDen,ncp=0)),cex=1.3,pos=4) 	
 	}
 	

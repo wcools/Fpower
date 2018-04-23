@@ -26,19 +26,14 @@ shinyUI(fluidPage(
 					uiOutput("sld.eff"),
 					uiOutput("sld.beta"),
 					selectInput("dbAlpha", "type I error:", c(".001" = ".001",".01" = ".01",".05" = ".05",".1" = ".1"),selected=".01"),
-					numericInput("dbPred", "number of categories:", 2, min = 2, max = 8)
+					numericInput("dbPred", "number of groups:", 3, min = 2, max = 8),
+					htmlOutput('txt.out.2')
 				)
 			),
 			column(4,
-				wellPanel(
-					htmlOutput('txt.out.1')
-				),
-				plotOutput("plotHoHa2")
-			),
-			column(4,
-				wellPanel(
-					htmlOutput('txt.out.2')
-				),
+				# wellPanel(
+					# htmlOutput('txt.out.1')
+				# ),
 				selectInput("dbPlots", "select plot", c("Power Curve" = "1","Ho and Ha" = "2","Ho" = "3"),selected="1"),
 				conditionalPanel("condition=input.dbPlots == 1",plotOutput("plotPowerCurve")),
 				conditionalPanel("condition=input.dbPlots == 2",plotOutput("plotHoHaF")),
@@ -49,6 +44,16 @@ shinyUI(fluidPage(
 				# plotOutput("plotPowerCurve"),
 				# plotOutput("plotHoHaF"),
 				# plotOutput("plotHoF")
+			),
+			column(4,
+				br(),
+				br(),
+				br(),
+				plotOutput("plotHoHa2")
+				# ,
+				# wellPanel(
+					# htmlOutput('txt.out.2')
+				# )
 			)
 		)
 	)
