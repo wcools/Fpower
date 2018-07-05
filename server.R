@@ -115,7 +115,7 @@ shinyServer(function(input,output,session){
 	output$plotPowerCurve <- renderPlot({
 		# if(input$showPowerCurve) plotOutput(getPowerCurve(), height = 100, width = 450)
 		validate(
-			need(input$dbFree!="NA", "")
+			need(input$dbFree!="NA", "first select free parameter")
 		)
 		plotOutput(getPowerCurve(), height = 100, width = 450)
 	})
@@ -168,7 +168,8 @@ shinyServer(function(input,output,session){
 		inx <- processChange()
 		# F-null and alternative distributions - rows
 		xmax=15 
-		xx=seq(0.01,xmax,.001) 
+		xmax.xx = 30
+		xx=seq(0.01,xmax.xx,.001) 
 		fxx=df(xx,inx$dfNum,inx$dfDen) 
 		mnx=max(fxx)+.2
 		par(mar=c(2.5,0,0,0))
@@ -183,18 +184,18 @@ shinyServer(function(input,output,session){
 		segments(cc,0,cc,.15) 
 		segments(0,0,0,1.1) 
 		segments(0,0,xmax,0)
-		fxx2=df(xx,inx$dfNum,inx$dfDen,ncp=round(inx$outNcp,2)) 
+		fxx2=df(xx,inx$dfNum,inx$dfDen,ncp=inx$outNcp) 
 		lines(xx,fxx2+mnx,lwd=2) 
 		segments(0,mnx,0,mnx+1.1) 
 		segments(0,mnx,xmax,mnx) 
 		segments(cc,0,cc,1.5*mnx) 
 		xs=xx[xx>cc] 
 		ys=fxx2[xx>cc] 
-		polygon(x=c(xs,cc),y=c(ys,0)+mnx,col="red") 
+		polygon(x=c(cc,xs,rev(xs),cc),y=mnx+c(df(cc,inx$dfNum,inx$dfDen,inx$outNcp),ys,0*ys,0),col="red")
 		text(cc,.6+mnx,"true state of nature",cex=1.5,pos=4) 
 		text(cc,.6,"decision",cex=1.5,pos=4)
-		text(cc-2.9,.3+mnx,substitute(italic(F)[list(dfn,dfd,ncp)],list(dfn=inx$dfNum,dfd=inx$dfDen,ncp=round(inx$outNcp,2))),cex=1.3,pos=4) 
-		text(cc-2.9,.8,substitute(italic(F)[list(dfn,dfd,ncp)],list(dfn=inx$dfNum,dfd=inx$dfDen,ncp=0)),cex=1.3,pos=4) 	
+		text(cc-2.9,.3+mnx,substitute(italic(F)[list(dfn,dfd,ncp)],list(dfn=inx$dfNum,dfd=inx$dfDen,ncp=inx$outNcp)),cex=1.3,pos=4) 
+		text(cc-2.9,.8,substitute(italic(F)[list(dfn,dfd,ncp)],list(dfn=inx$dfNum,dfd=inx$dfDen,ncp=0)),cex=1.3,pos=4) 
 	}
 	
 	# list(sldBeta=sldBeta,sldEff=sldEff,sldNtotal=sldNtotal,dbAlpha=dbAlpha,outCritF=outCritF,outNcp=outNcp,dfNum=dfNum,dfDen=dfDen,dbPred=dbPred)
