@@ -21,10 +21,10 @@ shinyUI(fluidPage(
 		fluidRow(
 			column(4,
 				wellPanel(
-					selectInput("dbFree", "free parameter:", c("select one"="NA","sample size"="ss","effect size"="es","type II error"="b"),selected="select one"),
+					selectInput("dbFree", "free parameter:", c("select one"="NA","sample size"="ss","effect size"="es","power"="b"),selected="select one"),
 					uiOutput("sld.ntotal"),
 					uiOutput("sld.eff"),
-					uiOutput("sld.beta"),
+					uiOutput("sld.pwr"),
 					selectInput("dbAlpha", "type I error:", c(".001" = ".001",".01" = ".01",".05" = ".05",".1" = ".1"),selected=".01"),
 					numericInput("dbPred", "number of groups:", 3, min = 2, max = 8),
 					htmlOutput('txt.out.2')

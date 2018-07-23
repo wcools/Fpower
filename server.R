@@ -18,22 +18,22 @@ shinyServer(function(input,output,session){
 	processChange <- reactive({
 		# post hoc
 		
-		sldBeta <- as.numeric(as.character((input$sldBeta)))
+		sldBeta <- as.numeric(as.character((input$sldPwr)))
 		sldNtotal <- as.numeric(as.character((input$sldNtotal)))
 		sldEff <- as.numeric(as.character((input$sldEff)))
 		dbAlpha <- as.numeric(as.character(input$dbAlpha))
 		dbPred <- as.numeric(as.character(input$dbPred))
 		
 		if(input$dbFree=="b"){
-			sldBeta <- 1-pwr.anova.test(k = dbPred, n = round(sldNtotal/dbPred), f = sldEff, sig.level = dbAlpha, power = )$power
+			sldBeta <- pwr.anova.test(k = dbPred, n = round(sldNtotal/dbPred), f = sldEff, sig.level = dbAlpha, power = )$power
 		}
 		# apriori
 		if(input$dbFree=="es"){
-			sldEff <- pwr.anova.test(k = dbPred, n = round(sldNtotal/dbPred), f = , sig.level = dbAlpha, power = 1-sldBeta)$f
+			sldEff <- pwr.anova.test(k = dbPred, n = round(sldNtotal/dbPred), f = , sig.level = dbAlpha, power = sldBeta)$f
 		}
 		# sensitivity
 		if(input$dbFree=="ss"){
-			sldNtotal <- dbPred*pwr.anova.test(k = dbPred, n = , f = sldEff, sig.level = dbAlpha, power = 1-sldBeta)$n		
+			sldNtotal <- dbPred*pwr.anova.test(k = dbPred, n = , f = sldEff, sig.level = dbAlpha, power = sldBeta)$n		
 		}
 		dfNum <- dbPred - 1
 		dfDen <- sldNtotal - dfNum - 1
@@ -55,7 +55,6 @@ shinyServer(function(input,output,session){
 		out
 	})
 	# output ncp critical F ----------------------------------------------------
-		# out <- paste0(out,"number of predictors ",inx$dbPred,"<br>")
 	output$txt.out.2 <- renderText({
 		inx <- processChange()
 		out <- ""
@@ -68,31 +67,28 @@ shinyServer(function(input,output,session){
 	output$sld.ntotal <- renderUI({
 		inx <- processChange()
 		txt <- "sample size:"
-		if(input$dbFree=="ss") txt <- "--conditional-- sample size"
+		if(input$dbFree=="ss") txt <- "sample size SELECTED"
 		sldNtotal <- isolate(inx$sldNtotal) 
 		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldNtotal <- 190
-		# if(length(inx$sldNtotal)==0) sldNtotal <- 3
 		sliderInput("sldNtotal", txt, min = 3, max = 256, value = sldNtotal)
 	})
 	# effect size f
 	output$sld.eff <- renderUI({
 		inx <- processChange()
 		txt <- "effect size:"
-		if(input$dbFree=="es") txt <- "--conditional-- effect size"
+		if(input$dbFree=="es") txt <- "effect size SELECTED"
 		sldEff <- isolate(inx$sldEff) 
-		# if(length(inx$sldEff)==0) sldEff <- 0.01
 		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldEff <- .25
 		sliderInput("sldEff", txt, min = 0.01, max = 2, value = sldEff, step=.001)
 	})
 	# type II error, beta
-	output$sld.beta <- renderUI({
+	output$sld.pwr <- renderUI({
 		inx <- processChange()
-		txt <- "type II error (power~"
-		if(input$dbFree=="b") txt <- "--conditional-- type II error (power~"
+		txt <- "power (type II error ~"
+		if(input$dbFree=="b") txt <- "power SELECTED (type II error ~ "
 		sldBeta <- isolate(inx$sldBeta)
-		# if(length(inx$sldBeta)==0) sldBeta <- 0
-		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldBeta <- .2
-		sliderInput("sldBeta", paste0(txt,round(1-sldBeta,2),")"), min = 0, max = 1, value = sldBeta,step=.001)
+		if(all(inx$sldBeta==0 & inx$sldEff==.01 & inx$sldNtotal==3)) sldBeta <- .8
+		sliderInput("sldPwr", paste0(txt,round(1-sldBeta,2),")"), min = 0.05, max = 1, value = sldBeta,step=.001)
 	})
 	
 	# ----- #
@@ -113,7 +109,6 @@ shinyServer(function(input,output,session){
 		checkboxInput("showPowerCurve","Power Curve", FALSE)
 	})
 	output$plotPowerCurve <- renderPlot({
-		# if(input$showPowerCurve) plotOutput(getPowerCurve(), height = 100, width = 450)
 		validate(
 			need(input$dbFree!="NA", "first select free parameter")
 		)
@@ -198,8 +193,6 @@ shinyServer(function(input,output,session){
 		text(cc-2.9,.8,substitute(italic(F)[list(dfn,dfd,ncp)],list(dfn=inx$dfNum,dfd=inx$dfDen,ncp=0)),cex=1.3,pos=4) 
 	}
 	
-	# list(sldBeta=sldBeta,sldEff=sldEff,sldNtotal=sldNtotal,dbAlpha=dbAlpha,outCritF=outCritF,outNcp=outNcp,dfNum=dfNum,dfDen=dfDen,dbPred=dbPred)
-
 	# depends on df num/den, alpha and critical F
 	getHoF <- function(){
 		inx <- processChange()
